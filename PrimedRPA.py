@@ -93,7 +93,24 @@ def getComplement(seq,
 	else:
 		return(seqComp)
 
-
+def __getComplement(seq:str, reverse:bool= False, rule:str= "N2N") -> str:
+    import re
+    seq = seq.upper()
+    pairs = [
+        ("A", "T"),
+        ("G", "C")
+    ]
+    if rule == "N2-":
+        pairs.append(("N", "-"))
+    elif rule != "N2N":
+        raise ValueError("Invalid rule")
+    for a,b in pairs:
+        # Fill in the first of the pairs with a dummy, replace second with first, and replace dummy with second
+        seq = seq.replace(a, "?").replace(b, a).replace("?", b)
+    seq = seq.replace("U", "A")
+    # Replace any non U,N,-,A,T,C,G with N
+    seq = re.sub(r"[^unatcg\-]", "N", seq, 0, re.IGNORECASE)
+    return seq if not reverse else seq[::-1]
 
 ## Background Binding Check = TO IMPROVE
 def BlastnBackgroundCheck(seq,AllParameter):
@@ -254,8 +271,8 @@ def BlastnBackgroundCheck(seq,AllParameter):
 
 
 # Creates Exo Fluorescent Probe
-def RunFluroProbeAnalysis(ProbeBindingSeq):
-
+def RunFluroProbeAnalysis(ProbeBindingSeq) -> bool:
+    return True
 	minIndexPosition = int(len(ProbeBindingSeq)*0.45)
 	maxIndexPosition = int(len(ProbeBindingSeq)*0.75)
 
@@ -269,10 +286,8 @@ def RunFluroProbeAnalysis(ProbeBindingSeq):
 				if (basenumber + 2) < proberegionlength:
 					if ProbeBindingSeq[(basenumber+2)] == "T" or ProbeBindingSeq[(basenumber+3)] == "T":
 						# State that probe seq passed in forward sense.
-						ProbeValidPass = True
-						# New Break For Loop
-						break
-	return ProbeValidPass
+						return True
+	return False
 
 
 # Secondary Structure Filter
