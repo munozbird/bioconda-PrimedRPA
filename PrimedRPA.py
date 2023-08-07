@@ -289,6 +289,20 @@ def RunFluroProbeAnalysis(ProbeBindingSeq) -> bool:
 						return True
 	return False
 
+# Creates Cas13a Probe
+from typing import List
+
+def casProbe(testSequence:str, refSeqs:List[str], *, testPosition:int= -3) -> bool:
+    """
+    """
+    # Extract the testPosition item from the testSequence
+    testChar = list(testSequence)[testPosition]
+	
+    # list comprehension: create a list of the same test position in all the reference sequences
+    others = [x[testPosition] for x in refSeqs]
+
+    # Return if that character is in any of the others
+    return test not in others
 
 # Secondary Structure Filter
 def SSIdentification(SeqOne, SeqTwo, ReverseOrientation, FixedBack=False ,threshold=4):
@@ -463,7 +477,7 @@ def IndentifyingAndFilteringOligos(AllParameter,
 
 	OligoDF = pd.DataFrame()
 	TargetSiteLengths = [AllParameter.PrimerLength]
-	if AllParameter.ProbeRequired in ['EXO','NFO']:
+	if AllParameter.ProbeRequired in ['EXO','NFO','CAS']:
 		TargetSiteLengths.append(AllParameter.ProbeLength)
 
 	# Loop through primer or probe
@@ -601,7 +615,7 @@ def ComboIdentifyier(PrimerSS,ReversePrimerSS,ProbeSS,AllParameter,PassedOligos,
 	for FP in PrimerSS:
 
 		# If Probe Required
-		if AllParameter.ProbeRequired in ['EXO','NFO']:
+		if AllParameter.ProbeRequired in ['EXO','NFO','CAS']:
 			Probes = [prss for prss in ProbeSS if (prss >= (FP+FPrimerL) and
 												   prss<= (FP+AllParameter.AmpliconSizeLimit-RPrimerL-ProbeL))]
 
@@ -630,7 +644,7 @@ def ComboIdentifyier(PrimerSS,ReversePrimerSS,ProbeSS,AllParameter,PassedOligos,
 		ComboSeqList = [PassedOligos.loc[FPIndex,'Oligo_Sequence'],getComplement(PassedOligos.loc[RPIndex,'Oligo_Sequence'],True)]
 
 		# Add Probe Sequence If Necessary
-		if AllParameter.ProbeRequired in ['EXO','NFO']:
+		if AllParameter.ProbeRequired in ['EXO','NFO','CAS']:
 			ProbeIndex = PassedOligos[(PassedOligos['Oligo_Type']=='Probe')&(PassedOligos['Oligo_Length']==ProbeL)&(PassedOligos['Binding_Site_Start_Index']==Combo[2])].index.tolist()[0]
 			ComboSeqList.append(PassedOligos.loc[ProbeIndex,'Oligo_Sequence'])
 
@@ -674,7 +688,7 @@ def ComboIdentifyier(PrimerSS,ReversePrimerSS,ProbeSS,AllParameter,PassedOligos,
 
 				MaxBackgroundScoresIndexes = [FPIndex,RPIndex]
 
-				if AllParameter.ProbeRequired in ['EXO','NFO']:
+				if AllParameter.ProbeRequired in ['EXO','NFO','CAS']:
 					PassedComboRow['Probe (P)'] = ComboSeqList[2]
 					PassedComboRow['Probe GC%'] = PassedOligos.loc[ProbeIndex,'GC_Content']
 					PassedComboRow['Probe Binding Start Site'] = PassedOligos.loc[ProbeIndex,'Binding_Site_Start_Index']
@@ -847,7 +861,7 @@ def CheckingAlignedOutputFile(AllParameter):
 	FinalOutputDF = pd.DataFrame()
 
 	# Determine all probe lengths available
-	if AllParameter.ProbeRequired in ['EXO','NFO']:
+	if AllParameter.ProbeRequired in ['EXO','NFO','CAS']:
 		PossibleProbeLengths = PassedOligos[PassedOligos['Oligo_Type']=='Probe'].loc[:,'Oligo_Length'].unique().tolist()
 
 	else:
@@ -982,7 +996,7 @@ try:
 		parser.add_argument('--IdentityThreshold', help='Desired Identity Threshold',default=0.99)
 		parser.add_argument('--ConservedAnchor', help='Identity Anchor Required',type=str,default='NO')
 		parser.add_argument('--PrimerLength', help='Desired Primer Length',type=str,default='30')
-		parser.add_argument('--ProbeRequired', help='Options [NO,EXO,NFO]',type=str,default='NO')
+		parser.add_argument('--ProbeRequired', help='Options [NO,EXO,NFO,CAS]',type=str,default='NO')
 		parser.add_argument('--ProbeLength', help='Desired Probe Length',type=str,default='50')
 		parser.add_argument('--AmpliconSizeLimit', help='Amplicon Size Limit',type=int,default=500)
 		parser.add_argument('--NucleotideRepeatLimit', help='Nucleotide Repeat Limit (i.e 5 = AAAAA)',type=int,default=5)
